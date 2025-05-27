@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results | MedBooking</title>
+    <!-- Google Fonts - More professional alternatives -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet CSS for maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root {
+            --primary-blue: #1a73e8;
+            --secondary-blue: #4285f4;
+            --accent-yellow: #fbbc05;
+            --light-yellow: #fff8e1;
+            --dark-gray: #3c4043;
+            --light-gray: #f5f5f5;
+            --white: #ffffff;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+            line-height: 1.6;
+        }
+        
+        /* Navigation Bar */
+        .navbar {
+            background-color: var(--white);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+        
+        .logo {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--primary-blue);
+        }
+        
+        .logo span {
+            color: var(--accent-yellow);
+        }
+        
+        .search-container {
+            display: flex;
+            align-items: center;
+            background: var(--light-gray);
+            border-radius: 30px;
+            padding: 8px 15px;
+            width: 40%;
+        }
+        
+        .search-container input {
+            border: none;
+            background: transparent;
+            width: 100%;
+            padding: 8px;
+            font-family: 'Roboto', sans-serif;
+            outline: none;
+        }
+        
+        .search-container button {
+            background: transparent;
+            border: none;
+            color: var(--primary-blue);
+            cursor: pointer;
+        }
+        
+        .user-actions a {
+            margin-left: 20px;
+            text-decoration: none;
+            color: var(--dark-gray);
+            font-weight: 500;
+        }
+        
+        .user-actions a:hover {
+            color: var(--primary-blue);
+        }
+        
+        /* Main Content Layout */
+        .main-container {
+            max-width: 1200px;
+            margin: 30px auto;
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            gap: 30px;
+            padding: 0 20px;
+        }
+        
+        /* Filters Section */
+        .filters-section {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            height: fit-content;
+            position: sticky;
+            top: 100px;
+        }
+        
+        .filters-section h3 {
+            font-family: 'Montserrat', sans-serif;
+            color: var(--primary-blue);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--light-gray);
+        }
+        
+        .filter-group {
+            margin-bottom: 20px;
+        }
+        
+        .filter-group h4 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            color: var(--dark-gray);
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+        
+        .filter-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .filter-option {
+            display: flex;
+            align-items: center;
+        }
+        
+        .filter-option input {
+            margin-right: 10px;
+        }
+        
+        .filter-option label {
+            font-size: 0.9rem;
+        }
+        
+        .range-slider {
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .range-values {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--dark-gray);
+            margin-top: 5px;
+        }
+        
+        /* Map Section */
+        .map-section {
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            height: 500px;
+            position: sticky;
+            top: 100px;
+        }
+        
+        #doctorMap {
+            height: 100%;
+            width: 100%;
+            border-radius: 10px;
+        }
+        
+        /* Doctors List */
+        .doctors-section h2 {
+            font-family: 'Montserrat', sans-serif;
+            color: var(--primary-blue);
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .doctors-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+        
+        .doctor-card {
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .doctor-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .doctor-header {
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+            color: white;
+            padding: 20px;
+            position: relative;
+        }
+        
+        .doctor-name {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .doctor-specialty {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+        }
+        
+        .doctor-specialty i {
+            margin-right: 8px;
+            color: var(--accent-yellow);
+        }
+        
+        .doctor-gender {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .doctor-details {
+            padding: 20px;
+        }
+        
+        .detail-item {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .detail-item i {
+            color: var(--secondary-blue);
+            margin-right: 10px;
+            margin-top: 3px;
+            font-size: 1rem;
+        }
+        
+        .detail-label {
+            font-weight: 500;
+            margin-right: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .detail-value {
+            font-size: 0.9rem;
+        }
+        
+        .doctor-actions {
+            padding: 0 20px 20px;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .btn {
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn-primary {
+            background: var(--primary-blue);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--secondary-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(26, 115, 232, 0.3);
+        }
+        
+        .btn-secondary {
+            background: var(--light-yellow);
+            color: var(--dark-gray);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--accent-yellow);
+            transform: translateY(-2px);
+        }
+        
+        .no-results {
+            text-align: center;
+            grid-column: 1 / -1;
+            padding: 50px;
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .no-results i {
+            font-size: 3rem;
+            color: var(--secondary-blue);
+            margin-bottom: 20px;
+        }
+        
+        .no-results h2 {
+            font-family: 'Montserrat', sans-serif;
+            color: var(--primary-blue);
+            margin-bottom: 15px;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .main-container {
+                grid-template-columns: 250px 1fr;
+            }
+            .map-section {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+            .filters-section {
+                position: static;
+            }
+            .search-container {
+                width: 60%;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .nav-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+            .search-container {
+                width: 100%;
+            }
+            .user-actions {
+                width: 100%;
+                display: flex;
+                justify-content: space-around;
+            }
+            .user-actions a {
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">Med<span>Booking</span></div>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search doctors by name...">
+                <button type="button" onclick="searchDoctors()"><i class="fas fa-search"></i></button>
+            </div>
+            
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <div class="main-container">
+        <!-- Filters Section -->
+        <aside class="filters-section">
+            <h3>Filter Doctors</h3>
+            
+            <div class="filter-group">
+                <h4>Specialty</h4>
+                <div class="filter-options">
+                    <div class="filter-option">
+                        <input type="checkbox" id="cardiology" name="specialty" value="Cardiology">
+                        <label for="cardiology">Cardiology</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="dermatology" name="specialty" value="Dermatology">
+                        <label for="dermatology">Dermatology</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="neurology" name="specialty" value="Neurology">
+                        <label for="neurology">Neurology</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="pediatrics" name="specialty" value="Pediatrics">
+                        <label for="pediatrics">Pediatrics</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="filter-group">
+                <h4>Gender</h4>
+                <div class="filter-options">
+                    <div class="filter-option">
+                        <input type="checkbox" id="male" name="gender" value="Male">
+                        <label for="male">Male</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="female" name="gender" value="Female">
+                        <label for="female">Female</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="filter-group">
+                <h4>Experience</h4>
+                <input type="range" min="0" max="40" value="10" class="range-slider" id="experienceRange">
+                <div class="range-values">
+                    <span>0 yrs</span>
+                    <span id="experienceValue">10+ yrs</span>
+                </div>
+            </div>
+            
+            <div class="filter-group">
+                <h4>Age</h4>
+                <input type="range" min="25" max="70" value="35" class="range-slider" id="ageRange">
+                <div class="range-values">
+                    <span>25</span>
+                    <span id="ageValue">35+</span>
+                </div>
+            </div>
+            
+            <button class="btn btn-primary" style="width: 100%; margin-top: 20px;" onclick="applyFilters()">
+                Apply Filters
+            </button>
+        </aside>
+        
+        <!-- Doctors List -->
+        <main class="doctors-section">
+            <h2>Available Specialists</h2>
+            
+            <div class="doctors-list">
+                {% for doctor in doctors %}
+                    <div class="doctor-card" data-specialty="{{ doctor.specialty }}" 
+                         data-gender="{{ doctor.gender }}" data-experience="{{ doctor.experience_years }}"
+                         data-age="{{ doctor.age }}" data-lat="{{ doctor.latitude }}" data-lng="{{ doctor.longitude }}">
+                        <div class="doctor-header">
+                            <h3 class="doctor-name">Dr. {{ doctor.name }}</h3>
+                            <div class="doctor-specialty">
+                                <i class="fas fa-stethoscope"></i>
+                                {{ doctor.specialty }}
+                            </div>
+                            <div class="doctor-gender">
+                                <i class="fas fa-{% if doctor.gender == 'Female' %}venus{% else %}mars{% endif %}"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="doctor-details">
+                            <div class="detail-item">
+                                <i class="fas fa-briefcase"></i>
+                                <div>
+                                    <span class="detail-label">Experience:</span>
+                                    <span class="detail-value">{{ doctor.experience_years }} years</span>
+                                </div>
+                            </div>
+                            
+                            <div class="detail-item">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <div>
+                                    <span class="detail-label">Location:</span>
+                                    <span class="detail-value">{{ doctor.clinic_address }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="detail-item">
+                                <i class="fas fa-user-md"></i>
+                                <div>
+                                    <span class="detail-label">Age:</span>
+                                    <span class="detail-value">{{ doctor.age }} years</span>
+                                </div>
+                            </div>
+                            
+                            
+                        </div>
+                        
+                        <div class="doctor-actions">
+                            {% if user.is_authenticated %}
+                                <form action="{% url 'book_appointment' doctor.id %}" method="get">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-calendar-check" style="margin-right: 8px;"></i>
+                                        Book Appointment
+                                    </button>
+                                </form>
+                            {% else %}
+                                <a href="{% url 'p_register' %}" class="btn btn-secondary">
+                                    <i class="fas fa-sign-in-alt" style="margin-right: 8px;"></i>
+                                    Login to Book
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="no-results">
+                        <i class="fas fa-search"></i>
+                        <h2>No Doctors Found</h2>
+                        <p>We couldn't find any doctors matching your criteria.</p>
+                        <p>Please try adjusting your search filters.</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </main>
+        
+        <!-- Map Section -->
+        <aside class="map-section">
+            <div id="doctorMap"></div>
+        </aside>
+    </div>
+
+    <!-- Leaflet JS for maps -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initialize the map
+        let map;
+        let markers = [];
+        
+        function initMap() {
+            // Default coordinates (you can set your default location)
+            const defaultLat = 36.7378;
+            const defaultLng = 3.0867;
+            
+            map = L.map('doctorMap').setView([defaultLat, defaultLng], 12);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            
+            // Add markers for each doctor
+            document.querySelectorAll('.doctor-card').forEach(card => {
+                const lat = parseFloat(card.dataset.lat) || defaultLat + (Math.random() * 0.02 - 0.01);
+                const lng = parseFloat(card.dataset.lng) || defaultLng + (Math.random() * 0.02 - 0.01);
+                const name = card.querySelector('.doctor-name').textContent;
+                const specialty = card.querySelector('.doctor-specialty').textContent.trim();
+                
+                const marker = L.marker([lat, lng]).addTo(map)
+                    .bindPopup(`<b>${name}</b><br>${specialty}`);
+                
+                markers.push({
+                    element: card,
+                    marker: marker
+                });
+                
+                // Add click event to highlight card when marker is clicked
+                marker.on('click', function() {
+                    highlightDoctorCard(card);
+                });
+                
+                // Add hover events to card and marker
+                card.addEventListener('mouseenter', function() {
+                    marker.openPopup();
+                });
+            });
+        }
+        
+        // Highlight the doctor card when marker is clicked
+        function highlightDoctorCard(card) {
+            // Remove highlight from all cards
+            document.querySelectorAll('.doctor-card').forEach(c => {
+                c.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.05)';
+            });
+            
+            // Add highlight to selected card
+            card.style.boxShadow = '0 5px 15px rgba(26, 115, 232, 0.3)';
+            
+            // Scroll to the card
+            card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        
+        // Search doctors by name
+        function searchDoctors() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const cards = document.querySelectorAll('.doctor-card');
+            
+            cards.forEach(card => {
+                const doctorName = card.querySelector('.doctor-name').textContent.toLowerCase();
+                
+                if (doctorName.includes(searchTerm)) {
+                    card.style.display = 'block';
+                    markers.find(m => m.element === card)?.marker.addTo(map);
+                } else {
+                    card.style.display = 'none';
+                    markers.find(m => m.element === card)?.marker.remove();
+                }
+            });
+        }
+        
+        // Apply filters
+        function applyFilters() {
+            const selectedSpecialties = Array.from(document.querySelectorAll('input[name="specialty"]:checked')).map(el => el.value);
+            const selectedGenders = Array.from(document.querySelectorAll('input[name="gender"]:checked')).map(el => el.value);
+            const minExperience = parseInt(document.getElementById('experienceRange').value);
+            const minAge = parseInt(document.getElementById('ageRange').value);
+            
+            document.querySelectorAll('.doctor-card').forEach(card => {
+                const specialty = card.dataset.specialty;
+                const gender = card.dataset.gender;
+                const experience = parseInt(card.dataset.experience);
+                const age = parseInt(card.dataset.age);
+                
+                const specialtyMatch = selectedSpecialties.length === 0 || selectedSpecialties.includes(specialty);
+                const genderMatch = selectedGenders.length === 0 || selectedGenders.includes(gender);
+                const experienceMatch = experience >= minExperience;
+                const ageMatch = age >= minAge;
+                
+                if (specialtyMatch && genderMatch && experienceMatch && ageMatch) {
+                    card.style.display = 'block';
+                    markers.find(m => m.element === card)?.marker.addTo(map);
+                } else {
+                    card.style.display = 'none';
+                    markers.find(m => m.element === card)?.marker.remove();
+                }
+            });
+        }
+        
+        // Update range value displays
+        document.getElementById('experienceRange').addEventListener('input', function() {
+            document.getElementById('experienceValue').textContent = this.value + '+ yrs';
+        });
+        
+        document.getElementById('ageRange').addEventListener('input', function() {
+            document.getElementById('ageValue').textContent = this.value + '+';
+        });
+        
+        // Initialize map when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initMap();
+            
+            // Add animation to doctor cards
+            const cards = document.querySelectorAll('.doctor-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 100 * index);
+            });
+        });
+    </script>
+</body>
+</html>
